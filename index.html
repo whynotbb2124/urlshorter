@@ -61,9 +61,41 @@
             border-radius: 8px;
             cursor: pointer;
             transition: background 0.3s ease;
+            width: 100%;
         }
         button:hover {
             background-color: #5a67d8;
+        }
+        .stats-group {
+            display: flex;
+            gap: 10px;
+            margin-top: 15px;
+            justify-content: space-between;
+        }
+        .btn-secondary {
+            background-color: #edf2f7;
+            color: #4a5568;
+            font-size: 13px;
+            padding: 10px 12px;
+            flex: 1;
+            font-weight: 500;
+            border-radius: 8px;
+            cursor: pointer;
+            border: none;
+            transition: background 0.3s ease;
+        }
+        .btn-secondary:hover {
+            background-color: #e2e8f0;
+        }
+        .stats-result {
+            margin-top: 15px;
+            font-size: 15px;
+            font-weight: bold;
+            color: #4a5568;
+            background: #f7fafc;
+            padding: 10px;
+            border-radius: 6px;
+            display: none;
         }
         .result-box {
             margin-top: 25px;
@@ -84,7 +116,7 @@
         }
         .error {
             color: #e53e3e;
-            margin-top: 10px;
+            margin-top: 15px;
             font-size: 14px;
             display: none;
         }
@@ -98,6 +130,14 @@
         <input type="text" id="urlInput" placeholder="Вставьте вашу долгую ссылку сюда..." required>
         <button onclick="shortenUrl()">Сократить</button>
     </div>
+
+    <div class="stats-group">
+        <button class="btn-secondary" onclick="getTotalStats()">Всего сокращено</button>
+        <button class="btn-secondary" onclick="getUserStats()">Мои сокращения</button>
+    </div>
+    <div id="statsResult" class="stats-result"></div>
+
+
     <div id="error" class="error"></div>
     <div id="resultBox" class="result-box">
         <p>Ваша короткая ссылка:</p>
@@ -106,13 +146,14 @@
 </div>
 
 <script>
+    const CURRENT_USER = "Guest";
+
     async function shortenUrl() {
         const urlInput = document.getElementById('urlInput').value;
         const resultBox = document.getElementById('resultBox');
         const shortLink = document.getElementById('shortLink');
         const errorDiv = document.getElementById('error');
 
-        // Сбрасываем старые результаты
         resultBox.style.display = 'none';
         errorDiv.style.display = 'none';
 
@@ -125,27 +166,54 @@
         try {
             const response = await fetch('/shorturl', {
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
+                headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     old: urlInput,
-                    username: "Guest" // Твоя структура Mix требует username
+                    username: CURRENT_USER
                 })
             });
 
-            if (!response.ok) {
-                throw new Error('Ошибка сервера при создании ссылки');
-            }
+            if (!response.ok) throw new Error('Ошибка сервера при создании ссылки');
 
             const data = await response.json();
             
             shortLink.href = data.short_url;
             shortLink.innerText = data.short_url;
             resultBox.style.display = 'block';
+            document.getElementById('statsResult').style.display = 'none';
         } catch (err) {
             errorDiv.innerText = err.message;
             errorDiv.style.display = 'block';
+        }
+    }
+
+    async function getTotalStats() {
+        const statsResult = document.getElementById('statsResult');
+        try {
+            const response = await fetch('/api/stats/total');
+            if (!response.ok) throw new Error();
+            const data = await response.json();
+            
+            statsResult.innerText = `Всего сокращено ссылок: ${data.total}`;
+            statsResult.style.display = 'block';
+        } catch (e) {
+            statsResult.innerText = 'Не удалось загрузить общую статистику';
+            statsResult.style.display = 'block';
+        }
+    }
+
+    async function getUserStats() {
+        const statsResult = document.getElementById('statsResult');
+        try {
+            const response = await fetch(`/api/stats/user/${CURRENT_USER}`);
+            if (!response.ok) throw new Error();
+            const data = await response.json();
+            
+            statsResult.innerText = `Вы (${CURRENT_USER}) сократили: ${data.user_total}`;
+            statsResult.style.display = 'block';
+        } catch (e) {
+            statsResult.innerText = 'Не удалось загрузить вашу статистику';
+            statsResult.style.display = 'block';
         }
     }
 </script>
