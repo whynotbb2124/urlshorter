@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Сокращатель ссылок</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        body {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            color: #333;
+        }
+        .container {
+            background: #ffffff;
+            padding: 40px;
+            border-radius: 16px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+            width: 100%;
+            max-width: 500px;
+            text-align: center;
+        }
+        h1 {
+            margin-bottom: 25px;
+            color: #4a5568;
+            font-size: 28px;
+        }
+        .input-group {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            margin-bottom: 20px;
+        }
+        input[type="text"] {
+            width: 100%;
+            padding: 14px 20px;
+            border: 2px solid #e2e8f0;
+            border-radius: 8px;
+            font-size: 16px;
+            transition: border-color 0.3s ease;
+            outline: none;
+        }
+        input[type="text"]:focus {
+            border-color: #667eea;
+        }
+        button {
+            background-color: #667eea;
+            color: white;
+            border: none;
+            padding: 14px 20px;
+            font-size: 16px;
+            font-weight: bold;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: background 0.3s ease;
+        }
+        button:hover {
+            background-color: #5a67d8;
+        }
+        .result-box {
+            margin-top: 25px;
+            padding: 15px;
+            background: #f7fafc;
+            border: 1px dashed #cbd5e0;
+            border-radius: 8px;
+            display: none;
+            word-break: break-all;
+        }
+        .result-box a {
+            color: #4c51bf;
+            font-weight: bold;
+            text-decoration: none;
+        }
+        .result-box a:hover {
+            text-decoration: underline;
+        }
+        .error {
+            color: #e53e3e;
+            margin-top: 10px;
+            font-size: 14px;
+            display: none;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>Сократить ссылку</h1>
+    <div class="input-group">
+        <input type="text" id="urlInput" placeholder="Вставьте вашу долгую ссылку сюда..." required>
+        <button onclick="shortenUrl()">Сократить</button>
+    </div>
+    <div id="error" class="error"></div>
+    <div id="resultBox" class="result-box">
+        <p>Ваша короткая ссылка:</p>
+        <a id="shortLink" href="#" target="_blank"></a>
+    </div>
+</div>
+
+<script>
+    async function shortenUrl() {
+        const urlInput = document.getElementById('urlInput').value;
+        const resultBox = document.getElementById('resultBox');
+        const shortLink = document.getElementById('shortLink');
+        const errorDiv = document.getElementById('error');
+
+        // Сбрасываем старые результаты
+        resultBox.style.display = 'none';
+        errorDiv.style.display = 'none';
+
+        if (!urlInput.trim()) {
+            errorDiv.innerText = 'Пожалуйста, введите URL';
+            errorDiv.style.display = 'block';
+            return;
+        }
+
+        try {
+            const response = await fetch('/shorturl', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    old: urlInput,
+                    username: "Guest" // Твоя структура Mix требует username
+                })
+            });
+
+            if (!response.ok) {
+                throw new Error('Ошибка сервера при создании ссылки');
+            }
+
+            const data = await response.json();
+            
+            shortLink.href = data.short_url;
+            shortLink.innerText = data.short_url;
+            resultBox.style.display = 'block';
+        } catch (err) {
+            errorDiv.innerText = err.message;
+            errorDiv.style.display = 'block';
+        }
+    }
+</script>
+
+</body>
+</html>
